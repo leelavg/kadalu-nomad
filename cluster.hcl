@@ -46,15 +46,28 @@ template "nomad_client_config" {
   plugin "docker" {
     config {
       allow_privileged = true
-      volumes {
-        enabled = true
-        selinuxlabel = "z"
-      }
     }
   }
   EOS
 
   destination = "${data("nomad-config")}/client.hcl"
+}
+
+template "nomad_mount_shared" {
+  # Hack till Shipyard supports supplying volume_options to Nomad Container
+  source = <<-EOS
+  #!/bin/bash
+
+  CIDS=$(docker ps | grep nomad-cluster | awk '{print $1}')
+  echo "Nomad container IDs: $CIDS"
+  for cid in $CIDS
+  do
+    docker exec $cid sh -c 'mount --make-shared /etc/nomad.d/data'
+  done
+  echo "Made all data mounts in nomad containers as 'shared'"
+  EOS
+
+  destination = "${data("nomad-config")}/make-shared.sh"
 }
 
 container "consul" {
@@ -104,16 +117,35 @@ nomad_cluster "dev" {
   client_config = "${data("nomad-config")}/client.hcl"
   consul_config = "${data("consul-config")}/client.hcl"
 
+  # Default is 'bind' mount
   volume {
-    source      = "/tmp"
-    destination = "/files"
+    source      = "${data("nomad-config")}/etc/nomad.d/data"
+    destination = "/etc/nomad.d/data"
   }
+
+  # Required for Kadalu CSI to use Gluster Native quota capabilities
+  volume {
+    source      = "/root/.ssh/id_rsa"
+    destination = "/root/.ssh/id_rsa"
+    read_only   = true
+  }
+}
+
+# Make Nomad data mounts as shared
+exec_local "mount_shared" {
+  depends_on = ["nomad_cluster.dev"]
+  cmd        = "bash"
+
+  args = [
+    "${data("nomad-config")}/make-shared.sh",
+  ]
 }
 
 # Example nomad job to verify 'privileged' mode and 'consul' integration
 nomad_job "example" {
-  cluster = "nomad_cluster.dev"
-  paths   = ["./example.nomad"]
+  cluster    = "nomad_cluster.dev"
+  depends_on = ["nomad_cluster.dev", "exec_local.mount_shared"]
+  paths      = ["./example.nomad"]
 }
 
 output "NOMAD_ADDR" {

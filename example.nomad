@@ -1,3 +1,4 @@
+# Sample job to verify 'privileged' containers and consul integration
 job "http-echo-dynamic-service" {
   datacenters = ["dc1"]
 
