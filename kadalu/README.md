@@ -2,20 +2,22 @@
 
 - The configuration here is for using external gluster volumes as persistent storage in Nomad using Kadalu CSI
 - Please refer actual job files before proceeding with demo and change config as required and follow along with commands according to your config
+- Locally tested against Nomad v1.1.4
 
 ## Local Development
 
 - This section can be skipped if you already have a Nomad cluster setup
 
+``` sh
 # Clone config repo used to create local Nomad cluster in docker and install shipyard following it's README
 -> git clone https://github.com/leelavg/kadalu-nomad && cd kadalu-nomad
 
 # After install shipyard, create local cluster
--> shipyar run
+-> shipyard run
 [...]
 -> eval $(shipyard env)
 -> export job_dir="$(pwd)/kadalu"
-
+```
 - End of local cluster creation and nomad config
 
 
@@ -25,6 +27,7 @@
 - You can configure vars mentioned in `cluster.vars` to reflect your external gluster details
 - For convenience necessary vars are set from CLI while running the job
 
+``` sh
 -> export volname="sample-pool" gluster_hosts="10.x.x.x" gluster_volname="sample-vol" job_dir="${job_dir:-$(pwd)}"
 # Make sure external gluster volume is started and quota is set
 -> ssh $gluster_hosts "gluster volume info $gluster_volname | grep Status"
@@ -32,10 +35,12 @@ Status: Started
 
 -> ssh $gluster_hosts "gluster volume quota $gluster_volname enable"
 volume quota : success
+```
 
 ### CSI Deployment
 
 - Controller part
+``` sh
 -> nomad run -var="volname=$volname" -var="gluster_hosts=$gluster_hosts" -var="gluster_volname=$gluster_volname" $job_dir/controller.nomad
 ==> 2021-09-20T18:23:07+05:30: Monitoring evaluation "19317b74"
     2021-09-20T18:23:07+05:30: Evaluation triggered by job "kadalu-csi-controller"
@@ -46,19 +51,21 @@ volume quota : success
 ==> 2021-09-20T18:23:08+05:30: Evaluation "19317b74" finished with status "complete"
 ==> 2021-09-20T18:23:08+05:30: Monitoring deployment "d9ee4dd7"
   ✓ Deployment "d9ee4dd7" successful
-    
+
     2021-09-20T18:23:28+05:30
     ID          = d9ee4dd7
     Job ID      = kadalu-csi-controller
     Job Version = 0
     Status      = successful
     Description = Deployment completed successfully
-    
+
     Deployed
     Task Group  Desired  Placed  Healthy  Unhealthy  Progress Deadline
     controller  1        1       1        0          2021-09-20T13:03:27Z
+```
 
 - Nodeplugin part
+``` sh
 -> nomad run -var="volname=$volname" -var="gluster_hosts=$gluster_hosts" -var="gluster_volname=$gluster_volname" $job_dir/nodeplugin.nomad
 ==> 2021-09-20T18:23:53+05:30: Monitoring evaluation "bd4d95d1"
     2021-09-20T18:23:53+05:30: Evaluation triggered by job "kadalu-csi-nodeplugin"
@@ -66,8 +73,10 @@ volume quota : success
     2021-09-20T18:23:54+05:30: Allocation "4c05ab5a" created: node "4e105698", group "nodeplugin"
     2021-09-20T18:23:54+05:30: Evaluation status changed: "pending" -> "complete"
 ==> 2021-09-20T18:23:54+05:30: Evaluation "bd4d95d1" finished with status "complete"
+```
 
 - Check CSI plugin status
+``` sh
 -> nomad plugin status kadalu-csi
 ID                   = kadalu-csi
 Provider             = kadalu
@@ -81,14 +90,15 @@ Allocations
 ID        Node ID   Task Group  Version  Desired  Status   Created    Modified
 d55e314d  4e105698  controller  0        run      running  1m20s ago  1m ago
 4c05ab5a  4e105698  nodeplugin  0        run      running  35s ago    20s ago
-
+```
 
 ### Volume Ops
 
-- We'll go through volume creation, attachment and deletion operations, typical volume lifecycle
+- We'll go through volume creation, attachment and deletion operations, basically, a typical volume life-cycle
 
+``` sh
 # Creation of nomad volume
--> sed -e "s/POOL/$volname/" -e "s/GHOST/$gluster_hosts/" -e "s/GVOL/$gluster_volname/" $job_dir/volume.hcl  | nomad volume create -                                                     
+-> sed -e "s/POOL/$volname/" -e "s/GHOST/$gluster_hosts/" -e "s/GVOL/$gluster_volname/" $job_dir/volume.hcl  | nomad volume create -
 Created external volume csi-test with ID csi-test
 
 # Attach the volume to a sample app
@@ -102,14 +112,14 @@ Created external volume csi-test with ID csi-test
 ==> 2021-09-20T18:28:29+05:30: Evaluation "e6dd3129" finished with status "complete"
 ==> 2021-09-20T18:28:29+05:30: Monitoring deployment "814e328c"
   ✓ Deployment "814e328c" successful
-    
+
     2021-09-20T18:28:58+05:30
     ID          = 814e328c
     Job ID      = sample-pv-check
     Job Version = 0
     Status      = successful
     Description = Deployment completed successfully
-    
+
     Deployed
     Task Group  Desired  Placed  Healthy  Unhealthy  Progress Deadline
     apps        1        1       1        0          2021-09-20T13:08:56Z
@@ -153,14 +163,14 @@ sample-pv-check            service  50        running  2021-09-20T18:28:28+05:30
 ==> 2021-09-20T18:36:48+05:30: Evaluation "eecc0c00" finished with status "complete"
 ==> 2021-09-20T18:36:48+05:30: Monitoring deployment "814e328c"
   ✓ Deployment "814e328c" successful
-    
+
     2021-09-20T18:36:48+05:30
     ID          = 814e328c
     Job ID      = sample-pv-check
     Job Version = 0
     Status      = successful
     Description = Deployment completed successfully
-    
+
     Deployed
     Task Group  Desired  Placed  Healthy  Unhealthy  Progress Deadline
     apps        1        1       1        0          2021-09-20T13:08:56Z
@@ -175,14 +185,14 @@ sample-pv-check            service  50        running  2021-09-20T18:28:28+05:30
 ==> 2021-09-20T18:37:50+05:30: Evaluation "e04b4549" finished with status "complete"
 ==> 2021-09-20T18:37:50+05:30: Monitoring deployment "66d246ee"
   ✓ Deployment "66d246ee" successful
-    
+
     2021-09-20T18:38:10+05:30
     ID          = 66d246ee
     Job ID      = sample-pv-check
     Job Version = 2
     Status      = successful
     Description = Deployment completed successfully
-    
+
     Deployed
     Task Group  Desired  Placed  Healthy  Unhealthy  Progress Deadline
     apps        1        1       1        0          2021-09-20T13:18:08Z
@@ -201,9 +211,11 @@ file1   file10  file2   file3   file4   file5   file6   file7   file8   file9
 
 # Destroying local cluster
 -> shipyard destroy
+```
 
 ## Contact
 
 - For any extra information/feature wrt Kadalu CSI, please raise an issue against kadalu [repo](https://github.com/kadalu/kadalu)
 - For any extra information wrt local Nomad dev setup for CSI, please raise an issue against kadalu-nomad [repo](https://github.com/leelavg/kadalu-nomad)
-- Based on ask/feature request, we may work on supporting internal gluster deployed managed by Nomad itself (feature parity wrt current Kubernetes deployments)
+- Based on ask/feature request, we may work on supporting internal gluster deployed and managed by Nomad itself (feature parity wrt current Kubernetes deployments)
+- If this folder isn't updated frequently one can find updated jobs at kadalu nomad [folder](https://github.com/kadalu/kadalu/tree/devel/nomad)

@@ -25,7 +25,7 @@ variable "gluster_volname" {
 
 variable "kadalu_version" {
   default     = "0.8.6"
-  description = "Kadalu CSI version which is tested against Nomad (v.1.1.4)"
+  description = "Kadalu CSI version which is tested against Nomad (v1.1.4)"
 }
 
 variable "gluster_user" {
