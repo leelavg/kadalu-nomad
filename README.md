@@ -17,11 +17,11 @@ shipyard_version: ">= 0.3.30"
 
 ## Shipyard Run
 - `cd` to current local repo and run `shipyard run` and wait for it's completion
-- You can install `nomad` (binary)[https://www.nomadproject.io/docs/install] for talking with Nomad agent created by Shipyard or use the same container as well (former is preferred)
+- You can install `nomad` [binary](https://www.nomadproject.io/docs/install) for talking with Nomad agent created by Shipyard or use the same container as well (former is preferred)
 - In general, nomad will be running on port `4646` but shipyard brings it up on an arbitrary port
 - Before using `nomad` binary run `eval $(shipyard env)`
 
 ## Using Kadalu
 - Not to re-iterate steps here for running Kadalu CSI in Nomad, please refer Kadalu [repo](https://github.com/kadalu/kadalu/tree/devel/nomad)
 
-Thanks @nicholasjackson for pushing fixes wrt Nomad configs and @eveld for quick ack's in [discord](https://discord.gg/ZuEFPJU69D)
+Thanks [nicholasjackson](https://github.com/nicholasjackson) for pushing fixes wrt Nomad configs and [eveld](https://github.com/eveld) for quick ack's in [discord](https://discord.gg/ZuEFPJU69D)
