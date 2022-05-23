@@ -4,7 +4,7 @@ author: Leela Venkaiah G
 slug: "nomad-csi"
 env:
     - eval $(shipyard env)
-shipyard_version: ">= 0.3.30"
+shipyard_version: ">= 0.3.53"
 ---
 
 # Local Development/Testing of CSI in Nomad & Consul
