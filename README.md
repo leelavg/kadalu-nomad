@@ -23,5 +23,13 @@ shipyard_version: ">= 0.3.53"
 
 ## Using Kadalu
 - Not to re-iterate steps here for running Kadalu CSI in Nomad, please refer Kadalu [repo](https://github.com/kadalu/kadalu/tree/devel/nomad)
+- If there's an unreleased Kadalu version mentioned in the vars then it signifies the changes are tested with the commit which'll be part of that release
+
+## Tested with below versions
+
+- Shipyard: v0.3.53
+- Nomad: v1.3.1
+- Consul: v1.12.0
+- Kadalu: v0.8.15
 
 Thanks [nicholasjackson](https://github.com/nicholasjackson) for pushing fixes wrt Nomad configs and [eveld](https://github.com/eveld) for quick ack's in [discord](https://discord.gg/ZuEFPJU69D)
