@@ -9,6 +9,11 @@ variable "client_nodes" {
   description = "Nomad agent will run in both client and server mode"
 }
 
+variable "nomad_version" {
+  default     = "1.3.1"
+  description = "Nomad docker image version"
+}
+
 # All templates
 template "consul_client_config" {
   source = <<-EOS
@@ -88,6 +93,7 @@ container_ingress "consul-http" {
 # Nomad Cluster
 nomad_cluster "dev" {
   client_nodes = "${var.client_nodes}"
+  version      = "${var.nomad_version}"
 
   network {
     name = "network.cloud"
